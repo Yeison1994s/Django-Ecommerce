@@ -1,0 +1,109 @@
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.models import User
+from django.template import RequestContext
+from django.http import HttpResponseRedirect
+from .models import Post
+from .decorators import unauthenticated_user, allowed_users, admin_only
+
+import os
+from django.conf import settings
+from django.templatetags.static import static
+
+
+from django.views.generic import (
+    ListView,
+    DetailView,
+    CreateView,
+    UpdateView,
+    DeleteView
+)
+#Esta importacion viene del templete del Administrador
+def index(request):
+    path = settings.MEDIA_ROOT
+    img_list = os.listdir(path + '/productos')
+    context = {'images' : img_list}
+    return render(request, "web/galleryBase.html", context)
+
+
+
+def home(request):
+    return render(request, 'web/home.html')
+
+class PostListView(ListView):
+    model = Post
+    template_name = 'web/pos.html'  # <app>/<model>_<viewtype>.html
+    context_object_name = 'posts'
+    ordering = ['-date_posted']
+    paginate_by = 5
+
+class UserPostListView(ListView):
+    model = Post
+    template_name = 'web/pos.html'  # <app>/<model>_<viewtype>.html
+    context_object_name = 'posts'
+    paginate_by = 5
+
+    def get_queryset(self):
+        user = get_object_or_404(User, username=self.kwargs.get('username'))
+        return Post.objects.filter(author=user).order_by('-date_posted')
+
+class PostDetailView(DetailView):
+    model = Post
+
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    fields = ['title', 'content']
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Post
+    fields = ['title', 'content']
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+    def test_func(self):
+        post = self.get_object()
+        if self.request.user == post.author:
+            return True
+        return False
+
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Post
+    #No sirve para nada cambiar
+    success_url = '/'
+
+    def test_func(self):
+        post = self.get_object()
+        if self.request.user == post.author:
+            return True
+        return False
+        
+def pos(request):
+    context = {
+        'posts': Post.objects.all()
+    }
+    return render(request,'web/pos.html')
+
+def pos1(request):
+    context = {
+        'posts': Post.objects.all()
+    }
+    return render(request,'web/pos1.html')
+
+
+def about(request):
+    return render(request, 'web/about.html', {'title': 'About'})
+
+def block(request):
+    return render(request, 'web/block.html')
+
+def contacto(request):
+    return render(request, 'web/contact.html')
+
+def product_list(request):
+    return render(request, 'web/product_list.html')

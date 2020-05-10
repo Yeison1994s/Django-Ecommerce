@@ -1,0 +1,42 @@
+{% extends 'web/galleryBase.html' %}
+
+{% load photo_tags %}
+ {% for gallery in product %}
+        <a href="{{ gallery.imagen.url }}" data-lightbox="example-set" data-title="Regala">
+            <img src="{{ gallery.imagen.url }}" width="340" height="80" alt="Regala" class="img-thumbnail"></img>
+         <p>Regala</p>
+        </article>
+        <p>{{gallery.name}}</p>
+        {% endfor %}
+
+
+
+
+{% block body %}
+	{% if object %}
+		{% for gallery in product %}
+			{% with gallery|split:'.' as strs %}
+				{% with strs|length as str_arr_len %}
+					{% with str_arr_len|add:'-1' as ext_idx %}
+						{% if strs|get_by_index:ext_idx == 'jpg' %}
+							</a>
+						{% endif %}
+					{% endwith %}
+				{% endwith %}
+			{% endwith %}
+			{% if forloop.counter|divisibleby:4 %}
+				<div class="clear"></div>
+			{% endif %}
+		{% endfor %}
+	{% else %}
+		<p>No image available.</p>
+	{% endif %}
+{% endblock body %}
+
+{% block extra_js %}
+	<script type='text/javascript'>
+		$(document).ready(function() {
+			$('.gallery a').simpleLightbox();
+		});
+	</script>
+{% endblock extra_js %}
